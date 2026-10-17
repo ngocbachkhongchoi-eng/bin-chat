@@ -11,6 +11,9 @@ const friends = {};
 const requests = {};
 const messages = {};
 
+// Lưu trữ tín hiệu gọi điện WebRTC
+const callSignals = {};
+
 const HTML = `<!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -30,25 +33,43 @@ button{width:100%;padding:12px;background:linear-gradient(90deg,#0052cc,#007bff)
 .link{margin-top:15px;color:#007bff;font-size:14px;cursor:pointer;text-decoration:underline}
 .msg{font-size:13px;margin-top:10px;height:18px;font-weight:bold}
 .err{color:red}.ok{color:green}
+
+/* Giao diện chính */
 .app{position:fixed;inset:0;display:flex;flex-direction:column;background:#e9eef5}
-.head{background:#fff;padding:15px;display:flex;justify-content:space-between;border-bottom:1px solid #ddd;font-weight:bold;font-size:16px}
+.head{background:#fff;padding:15px;display:flex;justify-content:space-between;border-bottom:1px solid #ddd;font-weight:bold;font-size:16px;align-items:center}
 .nav{display:flex;background:#fff;border-top:1px solid #ddd}
 .nav div{flex:1;text-align:center;padding:15px;font-size:14px;cursor:pointer;color:#888;user-select:none}
 .nav div.on{color:#007bff;font-weight:bold}
 .body{flex:1;overflow-y:auto;padding:15px}
+
+/* Chat */
 .chat-body{display:flex;flex-direction:column;height:100%;overflow:hidden}
-.chat-list{flex:1;overflow-y:auto;padding:15px;display:flex;flex-direction:column;gap:10px}
-.msg-me{background:#007bff;color:#fff;padding:10px 15px;border-radius:15px;align-self:flex-end;max-width:70%;font-size:15px}
-.msg-you{background:#fff;color:#000;padding:10px 15px;border-radius:15px;align-self:flex-start;max-width:70%;font-size:15px;box-shadow:0 2px 5px rgba(0,0,0,0.05)}
-.chat-input{display:flex;padding:10px;background:#fff;border-top:1px solid #ddd}
+.chat-list{flex:1;overflow-y:auto;padding:15px;display:flex;flex-direction:column;gap:10px;background:#e9eef5}
+.msg-me{background:#007bff;color:#fff;padding:10px 15px;border-radius:15px;align-self:flex-end;max-width:75%;font-size:15px;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+.msg-you{background:#fff;color:#000;padding:10px 15px;border-radius:15px;align-self:flex-start;max-width:75%;font-size:15px;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+.msg-trans{font-size:11px;color:#aaa;margin-top:3px;display:block}
+.chat-input-area{background:#fff;border-top:1px solid #ddd;padding-bottom:10px}
+.tools{padding:8px 10px;display:flex;gap:10px;align-items:center;border-bottom:1px solid #f0f0f0;font-size:13px}
+.tools select{padding:4px;border-radius:5px;border:1px solid #ccc}
+.chat-input{display:flex;padding:10px}
 .chat-input input{flex:1;margin:0;border-radius:20px;padding:10px 15px}
 .chat-input button{width:auto;margin:0 0 0 10px;padding:10px 20px;border-radius:20px}
-.loading{position:fixed;inset:0;background:rgba(255,255,255,0.95);display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:1000;font-size:18px;color:#0052cc;font-weight:bold}
+
+/* Call Overlay */
+.call-screen{position:fixed;inset:0;background:linear-gradient(135deg,#001a4d,#0052cc);color:#fff;z-index:5000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
+.call-avatar{width:120px;height:120px;border-radius:50%;background:#4da3ff;display:flex;align-items:center;justify-content:center;font-size:50px;font-weight:bold}
+.call-status{font-size:18px}
+.call-btns{display:flex;gap:20px;margin-top:30px}
+.call-btns button{width:70px;height:70px;border-radius:50%;font-size:28px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff}
+.btn-hang{background:#e53935}
+.btn-acc{background:#43a047}
+.btn-mute{background:rgba(255,255,255,0.2);width:50px;height:50px;font-size:20px}
+.btn-mute.muted{background:#ff9800}
 </style>
 </head>
 <body>
 
-<div id="loading" class="loading">Đang kết nối...</div>
+<div id="loading" class="loading" style="position:fixed;inset:0;background:#fff;z-index:9999;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#0052cc;font-size:18px">Đang kết nối...</div>
 
 <div id="loginView" class="auth hide">
   <div class="box">
@@ -75,8 +96,13 @@ button{width:100%;padding:12px;background:linear-gradient(90deg,#0052cc,#007bff)
 <div id="app" class="app hide">
   <div class="head">
     <span id="hName">...</span>
-    <span style="color:red;cursor:pointer" onclick="location.reload()">Thoát</span>
+    <div style="display:flex;gap:15px;font-size:20px">
+      <span id="btnCallVoice" class="hide" style="cursor:pointer" title="Gọi thoại" onclick="startCall('voice')">📞</span>
+      <span id="btnCallVideo" class="hide" style="cursor:pointer" title="Gọi video" onclick="startCall('video')">🎥</span>
+      <span style="color:red;cursor:pointer" onclick="location.reload()">Thoát</span>
+    </div>
   </div>
+  
   <div class="body" id="bFriend">
     <h3>Kết bạn</h3>
     <div style="display:flex;gap:10px;margin:10px 0">
@@ -87,39 +113,64 @@ button{width:100%;padding:12px;background:linear-gradient(90deg,#0052cc,#007bff)
     <h3 style="margin-top:20px">Lời mời</h3>
     <div id="reqList"></div>
   </div>
+  
   <div class="body hide" id="bChat">
     <h3>Bạn bè</h3>
     <div id="friendList"></div>
   </div>
+  
   <div class="chat-body hide" id="bChatRoom">
     <div class="chat-list" id="chatList"></div>
-    <div class="chat-input">
-      <input id="msgInput" placeholder="Nhập tin nhắn...">
-      <button onclick="sendMsg()">Gửi</button>
+    <div class="chat-input-area">
+      <div class="tools">
+        <span>Dịch:</span>
+        <select id="langSelect">
+          <option value="vi">Không dịch</option>
+          <option value="en">Tiếng Anh</option>
+          <option value="zh-CN">Tiếng Trung</option>
+          <option value="ja">Tiếng Nhật</option>
+          <option value="ko">Tiếng Hàn</option>
+        </select>
+        <button style="width:auto;padding:5px 15px;margin:0;font-size:12px" onclick="backToFriends()">← Quay lại</button>
+      </div>
+      <div class="chat-input">
+        <input id="msgInput" placeholder="Nhập tin nhắn...">
+        <button onclick="sendMsg()">Gửi</button>
+      </div>
     </div>
   </div>
+  
   <div class="body hide" id="bSetting">
     <h3>Cài đặt</h3>
-    <p>Tài khoản: <b id="setName"></b></p>
+    <p style="margin-top:10px">Tài khoản: <b id="setName"></b></p>
   </div>
-  <div class="nav">
+  
+  <div class="nav" id="mainNav">
     <div onclick="tab('Friend')" id="navFriend">Kết bạn</div>
     <div onclick="tab('Chat')" id="navChat">Nhắn tin</div>
     <div onclick="tab('Setting')" id="navSetting">Cài đặt</div>
   </div>
 </div>
 
+<audio id="remoteAudio" autoplay></audio>
+<video id="localVideo" autoplay muted playsinline style="display:none;position:fixed;bottom:20px;right:20px;width:100px;border-radius:10px;border:2px solid #fff;z-index:5001"></video>
+
 <script src="/socket.io/socket.io.js"></script>
 <script>
 var socket = io();
 var me = "";
 var currentFriend = "";
+var pc = null;
+var localStream = null;
+var currentCallId = null;
+var isMuted = false;
 
 socket.on('connect', function() {
   document.getElementById('loading').classList.add('hide');
   document.getElementById('loginView').classList.remove('hide');
 });
 
+// XỬ LÝ ĐĂNG NHẬP / ĐĂNG KÝ
 function showReg(){ document.getElementById('loginView').classList.add('hide'); document.getElementById('regView').classList.remove('hide'); }
 function showLogin(){ document.getElementById('regView').classList.add('hide'); document.getElementById('loginView').classList.remove('hide'); }
 
@@ -157,6 +208,7 @@ function doLogin(){
   });
 }
 
+// XỬ LÝ TAB
 function tab(name){
   document.getElementById('bFriend').classList.add('hide');
   document.getElementById('bChat').classList.add('hide');
@@ -165,39 +217,34 @@ function tab(name){
   document.getElementById('navFriend').classList.remove('on');
   document.getElementById('navChat').classList.remove('on');
   document.getElementById('navSetting').classList.remove('on');
+  document.getElementById('btnCallVoice').classList.add('hide');
+  document.getElementById('btnCallVideo').classList.add('hide');
+  document.getElementById('mainNav').classList.remove('hide');
+  
   document.getElementById('b' + name).classList.remove('hide');
   document.getElementById('nav' + name).classList.add('on');
+  currentFriend = "";
 }
 
+function backToFriends(){
+  tab('Chat');
+}
+
+// KẾT BẠN
 function doSearch(){
   var q = document.getElementById('searchName').value.trim();
   if(!q) return;
-  
   socket.emit('searchUser', {query:q}, function(res){
     var box = document.getElementById('searchResult');
     box.innerHTML = "";
-    
     if(res.ok){
-      if(res.username === me) { 
-        box.innerHTML = "<div style='margin-top:10px;color:red'>Đây là bạn!</div>"; 
-        return; 
-      }
-      
+      if(res.username === me) { box.innerHTML = "<div style='margin-top:10px;color:red'>Đây là bạn!</div>"; return; }
       var div = document.createElement('div');
       div.style.cssText = "background:#fff;padding:10px;border-radius:10px;margin-top:10px;display:flex;justify-content:space-between;align-items:center";
-      
-      var span = document.createElement('span');
-      span.innerText = res.username;
-      
-      var btn = document.createElement('button');
-      btn.innerText = "Kết bạn";
-      btn.style.cssText = "width:auto;padding:5px 10px;margin:0";
+      var span = document.createElement('span'); span.innerText = res.username;
+      var btn = document.createElement('button'); btn.innerText = "Kết bạn"; btn.style.cssText = "width:auto;padding:5px 10px;margin:0";
       btn.onclick = function(){ addFriend(res.username); };
-      
-      div.appendChild(span);
-      div.appendChild(btn);
-      box.appendChild(div);
-      
+      div.appendChild(span); div.appendChild(btn); box.appendChild(div);
     } else {
       box.innerHTML = "<div style='margin-top:10px;color:red'>Không tìm thấy!</div>";
     }
@@ -213,23 +260,14 @@ function addFriend(name){
 }
 
 function renderRequests(list){
-  var box = document.getElementById('reqList');
-  box.innerHTML = "";
+  var box = document.getElementById('reqList'); box.innerHTML = "";
   list.forEach(function(name){
     var d = document.createElement('div');
     d.style.cssText = "background:#fff;padding:10px;border-radius:10px;margin-top:5px;display:flex;justify-content:space-between;align-items:center";
-    
-    var span = document.createElement('span');
-    span.innerText = name;
-    
-    var btn = document.createElement('button');
-    btn.innerText = "Đồng ý";
-    btn.style.cssText = "width:auto;padding:5px 15px;margin:0";
+    var span = document.createElement('span'); span.innerText = name;
+    var btn = document.createElement('button'); btn.innerText = "Đồng ý"; btn.style.cssText = "width:auto;padding:5px 15px;margin:0";
     btn.onclick = function(){ acceptReq(name); };
-    
-    d.appendChild(span);
-    d.appendChild(btn);
-    box.appendChild(d);
+    d.appendChild(span); d.appendChild(btn); box.appendChild(d);
   });
 }
 
@@ -240,32 +278,40 @@ function acceptReq(name){
 }
 
 function renderFriends(list){
-  var box = document.getElementById('friendList');
-  box.innerHTML = "";
+  var box = document.getElementById('friendList'); box.innerHTML = "";
   list.forEach(function(name){
     var d = document.createElement('div');
-    d.style.cssText = "background:#fff;padding:10px;border-radius:10px;margin-top:5px;cursor:pointer";
-    d.innerText = name;
+    d.style.cssText = "background:#fff;padding:15px;border-radius:10px;margin-top:5px;cursor:pointer;display:flex;justify-content:space-between";
+    d.innerHTML = "<b>" + name + "</b> <span style='color:#007bff'>Chat ›</span>";
     d.onclick = function(){ openChat(name); };
     box.appendChild(d);
   });
 }
 
+// CHAT
 function openChat(name){
   currentFriend = name;
+  document.getElementById('hName').innerText = name;
+  document.getElementById('btnCallVoice').classList.remove('hide');
+  document.getElementById('btnCallVideo').classList.remove('hide');
+  document.getElementById('mainNav').classList.add('hide');
+  
   document.getElementById('bFriend').classList.add('hide');
   document.getElementById('bChat').classList.add('hide');
   document.getElementById('bSetting').classList.add('hide');
   document.getElementById('bChatRoom').classList.remove('hide');
-  document.getElementById('chatList').innerHTML = "<div style='text-align:center;margin-top:20px;color:#888'>Đang tải...</div>";
   
-  socket.emit('getMessages', {withUser:name}, function(msgs){
-    var box = document.getElementById('chatList');
-    box.innerHTML = "";
+  loadMessages();
+}
+
+function loadMessages(){
+  if(!currentFriend) return;
+  socket.emit('getMessages', {withUser:currentFriend}, function(msgs){
+    var box = document.getElementById('chatList'); box.innerHTML = "";
     msgs.forEach(function(m){
       var d = document.createElement('div');
       d.className = m.from === me ? 'msg-me' : 'msg-you';
-      d.innerText = m.text;
+      d.innerHTML = m.text + (m.transTag ? "<span class='msg-trans'>🌐 " + m.transTag + "</span>" : "");
       box.appendChild(d);
     });
     box.scrollTop = box.scrollHeight;
@@ -276,22 +322,173 @@ function sendMsg(){
   var txt = document.getElementById('msgInput').value;
   if(!txt || !currentFriend) return;
   document.getElementById('msgInput').value = "";
-  socket.emit('sendMessage', {to:currentFriend, text:txt}, function(){
-    openChat(currentFriend);
-  });
+  
+  var lang = document.getElementById('langSelect').value;
+  
+  if(lang === 'vi') {
+    socket.emit('sendMessage', {to:currentFriend, text:txt, transTag:null}, function(){ loadMessages(); });
+  } else {
+    // Hiển thị tạm
+    socket.emit('sendMessage', {to:currentFriend, text:txt + " (Đang dịch...)", transTag:null}, function(){ loadMessages(); });
+    
+    // Gọi API Google Dịch
+    fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=" + lang + "&dt=t&q=" + encodeURIComponent(txt))
+    .then(r => r.json())
+    .then(data => {
+      var translated = data[0][0][0];
+      socket.emit('sendMessage', {to:currentFriend, text:translated, transTag:"Đã dịch"}, function(){ loadMessages(); });
+    }).catch(e => {
+      socket.emit('sendMessage', {to:currentFriend, text:txt + " (Lỗi dịch)", transTag:null}, function(){ loadMessages(); });
+    });
+  }
 }
 
 socket.on('newMessage', function(data){
-  if(currentFriend === data.from || currentFriend === data.to){
-    openChat(currentFriend);
+  if(currentFriend === data.from || currentFriend === data.to){ loadMessages(); }
+});
+
+// ==========================================
+// WEBRTC - GỌI ĐIỆN & VIDEO
+// ==========================================
+async function startCall(type) {
+  if(!currentFriend) return;
+  currentCallId = Date.now().toString();
+  
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' });
+    if(type === 'video') {
+      document.getElementById('localVideo').srcObject = localStream;
+      document.getElementById('localVideo').style.display = 'block';
+    }
+  } catch (err) {
+    alert("Không thể truy cập Microphone/Camera! Hãy cấp quyền cho trình duyệt.");
+    return;
+  }
+
+  showCallScreen(currentFriend, "Đang gọi...", type, "outgoing");
+  
+  socket.emit('callUser', {
+    to: currentFriend,
+    callId: currentCallId,
+    type: type
+  });
+}
+
+socket.on('incomingCall', async function(data) {
+  if(pc) { socket.emit('rejectCall', {to: data.from, callId: data.callId}); return; }
+  currentCallId = data.callId;
+  currentFriend = data.from;
+  
+  if(confirm(data.from + " đang gọi " + (data.type === 'video' ? 'Video' : 'Thoại') + " cho bạn. Nghe máy?")) {
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: data.type === 'video' });
+      if(data.type === 'video') {
+        document.getElementById('localVideo').srcObject = localStream;
+        document.getElementById('localVideo').style.display = 'block';
+      }
+    } catch (err) {
+      alert("Lỗi Microphone/Camera!"); return;
+    }
+    
+    showCallScreen(data.from, "Đang kết nối...", data.type, "incoming");
+    
+    socket.emit('acceptCall', { to: data.from, callId: currentCallId });
+    
+    // Người nhận tạo Offer
+    createPeerConnection(data.from);
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    socket.emit('webrtcSignal', { to: data.from, signal: { type: 'offer', sdp: offer.sdp } });
+    
+  } else {
+    socket.emit('rejectCall', {to: data.from, callId: data.callId});
   }
 });
 
-socket.on('requestUpdate', function(){
-  socket.emit('getRequests', function(res){
-    renderRequests(res);
-  });
+socket.on('callAccepted', async function(data) {
+  document.getElementById('callStatus').innerText = "Đang kết nối...";
+  createPeerConnection(data.from);
 });
+
+socket.on('webrtcSignal', async function(data) {
+  if(!pc) return;
+  const signal = data.signal;
+  
+  if(signal.type === 'offer') {
+    await pc.setRemoteDescription(new RTCSessionDescription(signal));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    socket.emit('webrtcSignal', { to: data.from, signal: { type: 'answer', sdp: answer.sdp } });
+  } else if(signal.type === 'answer') {
+    await pc.setRemoteDescription(new RTCSessionDescription(signal));
+  } else if(signal.candidate) {
+    await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+  }
+});
+
+function createPeerConnection(targetUser) {
+  pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+  
+  localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+  
+  pc.onicecandidate = event => {
+    if(event.candidate) {
+      socket.emit('webrtcSignal', { to: targetUser, signal: { candidate: event.candidate } });
+    }
+  };
+  
+  pc.ontrack = event => {
+    document.getElementById('remoteAudio').srcObject = event.streams[0];
+    // Nếu là video, có thể hiển thị toàn màn hình (tùy chọn)
+    document.getElementById('callStatus').innerText = "Đang trong cuộc gọi";
+  };
+}
+
+socket.on('callEnded', function() {
+  endCallUI();
+});
+
+function endCallUI() {
+  if(pc) { pc.close(); pc = null; }
+  if(localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  document.getElementById('localVideo').style.display = 'none';
+  document.getElementById('localVideo').srcObject = null;
+  document.getElementById('remoteAudio').srcObject = null;
+  var screen = document.getElementById('callScreen');
+  if(screen) screen.remove();
+  currentCallId = null;
+}
+
+function hangup() {
+  if(currentFriend && currentCallId) {
+    socket.emit('endCall', { to: currentFriend, callId: currentCallId });
+  }
+  endCallUI();
+}
+
+function showCallScreen(name, status, type, dir) {
+  if(document.getElementById('callScreen')) document.getElementById('callScreen').remove();
+  
+  var div = document.createElement('div');
+  div.id = 'callScreen';
+  div.className = 'call-screen';
+  
+  var html = "<div class='call-avatar'>" + name.charAt(0).toUpperCase() + "</div>";
+  html += "<div class='call-name' style='font-size:24px;font-weight:bold'>" + name + "</div>";
+  html += "<div class='call-status' id='callStatus'>" + status + "</div>";
+  html += "<div class='call-btns'>";
+  
+  if(dir === 'outgoing') {
+    html += "<button class='btn-hang' onclick='hangup()'>📵</button>";
+  } else {
+    // Nếu cần thiết có thể thêm nút chấp nhận, nhưng do dùng confirm nên bỏ qua
+  }
+  
+  html += "</div>";
+  div.innerHTML = html;
+  document.body.appendChild(div);
+}
+
 </script>
 </body>
 </html>`;
@@ -301,9 +498,7 @@ app.get('/', (req, res) => res.send(HTML));
 io.on('connection', (socket) => {
   socket.on('register', (data, cb) => {
     const { username, password } = data;
-    if(users.find(u => u.username.toLowerCase() === username.toLowerCase())) {
-      return cb({ ok: false, error: 'Tên đã có người dùng' });
-    }
+    if(users.find(u => u.username.toLowerCase() === username.toLowerCase())) return cb({ ok: false, error: 'Tên đã có người dùng' });
     users.push({ username, password });
     cb({ ok: true });
   });
@@ -311,22 +506,18 @@ io.on('connection', (socket) => {
   socket.on('login', (data, cb) => {
     const { username, password } = data;
     const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
-    if(!user || user.password !== password) {
-      return cb({ ok: false, error: 'Sai tài khoản hoặc mật khẩu' });
-    }
+    if(!user || user.password !== password) return cb({ ok: false, error: 'Sai tài khoản hoặc mật khẩu' });
     socket.username = user.username;
     cb({ ok: true, user: user.username, friends: friends[user.username] || [], requests: requests[user.username] || [] });
   });
 
   socket.on('searchUser', (data, cb) => {
     const f = users.find(u => u.username.toLowerCase() === data.query.toLowerCase());
-    if(f) cb({ ok: true, username: f.username });
-    else cb({ ok: false });
+    if(f) cb({ ok: true, username: f.username }); else cb({ ok: false });
   });
 
   socket.on('sendFriendRequest', (data, cb) => {
-    const from = socket.username;
-    const to = data.to;
+    const from = socket.username, to = data.to;
     if(!requests[to]) requests[to] = [];
     if(requests[to].indexOf(from) === -1) requests[to].push(from);
     io.emit('requestUpdate');
@@ -338,8 +529,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('acceptFriend', (data, cb) => {
-    const me = socket.username;
-    const them = data.from;
+    const me = socket.username, them = data.from;
     if(requests[me]) requests[me] = requests[me].filter(n => n !== them);
     if(!friends[me]) friends[me] = [];
     if(!friends[them]) friends[them] = [];
@@ -357,14 +547,34 @@ io.on('connection', (socket) => {
     const from = socket.username;
     const key = [from, data.to].sort().join('::');
     if(!messages[key]) messages[key] = [];
-    const msg = { from, to: data.to, text: data.text };
-    messages[key].push(msg);
-    io.emit('newMessage', msg);
+    messages[key].push({ from, to: data.to, text: data.text, transTag: data.transTag });
+    io.emit('newMessage', { from, to: data.to });
     cb({ ok: true });
+  });
+
+  // ==== SIGNALING GỌI ĐIỆN ====
+  socket.on('callUser', (data) => {
+    io.emit('incomingCall', { from: socket.username, to: data.to, callId: data.callId, type: data.type });
+  });
+
+  socket.on('acceptCall', (data) => {
+    io.emit('callAccepted', { from: socket.username, to: data.to, callId: data.callId });
+  });
+
+  socket.on('rejectCall', (data) => {
+    io.emit('callEnded', { from: socket.username, to: data.to });
+  });
+
+  socket.on('endCall', (data) => {
+    io.emit('callEnded', { from: socket.username, to: data.to });
+  });
+
+  socket.on('webrtcSignal', (data) => {
+    io.emit('webrtcSignal', { from: socket.username, to: data.to, signal: data.signal });
   });
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
-  console.log('Server chạy thành công!');
+  console.log('Server Full Tính Năng đang chạy!');
 });
