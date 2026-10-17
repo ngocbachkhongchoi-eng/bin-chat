@@ -27,7 +27,6 @@ body{background:#e9eef5;height:100vh;overflow:hidden}
 input{width:100%;padding:12px;margin:8px 0;border:2px solid #eee;border-radius:10px;font-size:15px;outline:none}
 input:focus{border-color:#007bff}
 button{width:100%;padding:12px;background:linear-gradient(90deg,#0052cc,#007bff);color:#fff;border:0;border-radius:10px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:10px;transition:0.2s}
-button:active{transform:scale(0.98)}
 .link{margin-top:15px;color:#007bff;font-size:14px;cursor:pointer;text-decoration:underline}
 .msg{font-size:13px;margin-top:10px;height:18px;font-weight:bold}
 .err{color:red}.ok{color:green}
@@ -49,9 +48,7 @@ button:active{transform:scale(0.98)}
 </head>
 <body>
 
-<div id="loading" class="loading">
-  Đang kết nối...
-</div>
+<div id="loading" class="loading">Đang kết nối...</div>
 
 <div id="loginView" class="auth hide">
   <div class="box">
@@ -97,7 +94,7 @@ button:active{transform:scale(0.98)}
   <div class="chat-body hide" id="bChatRoom">
     <div class="chat-list" id="chatList"></div>
     <div class="chat-input">
-      <input id="msgInput" placeholder="Nhập tin nhắn..." onkeypress="if(event.key==='Enter')sendMsg()">
+      <input id="msgInput" placeholder="Nhập tin nhắn...">
       <button onclick="sendMsg()">Gửi</button>
     </div>
   </div>
@@ -284,12 +281,7 @@ io.on('connection', (socket) => {
       return cb({ ok: false, error: 'Sai tài khoản hoặc mật khẩu' });
     }
     socket.username = user.username;
-    cb({ 
-      ok: true, 
-      user: user.username, 
-      friends: friends[user.username] || [], 
-      requests: requests[user.username] || [] 
-    });
+    cb({ ok: true, user: user.username, friends: friends[user.username] || [], requests: requests[user.username] || [] });
   });
 
   socket.on('searchUser', (data, cb) => {
