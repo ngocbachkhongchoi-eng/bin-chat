@@ -1,7 +1,6 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const os = require('os');
 
 const app = express();
 const server = http.createServer(app);
@@ -25,15 +24,16 @@ html,body{height:100%;width:100%}
 body{background:#e9eef5;overflow:hidden}
 .hidden{display:none!important}
 .auth{position:fixed;inset:0;z-index:100;background:linear-gradient(135deg,#0052cc,#007bff,#00c6ff);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
-.card{background:#fff;border-radius:24px;padding:40px 34px;max-width:420px;width:100%;box-shadow:0 30px 80px rgba(0,0,0,.35);margin:auto}
-.brand{text-align:center;font-size:36px;font-weight:800;letter-spacing:8px;background:linear-gradient(90deg,#0052cc,#00c6ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
-.sub{text-align:center;color:#888;font-size:13px;margin-bottom:26px}
-h2{text-align:center;color:#0052cc;margin-bottom:18px;font-size:22px}
+.card{background:#fff;border-radius:24px;padding:40px 34px;max-width:420px;width:100%;box-shadow:0 30px 80px rgba(0,0,0,.35);margin:auto;text-align:center}
+.brand{font-size:36px;font-weight:800;letter-spacing:8px;background:linear-gradient(90deg,#0052cc,#00c6ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+.sub{color:#888;font-size:13px;margin-bottom:26px}
+h2{color:#0052cc;margin-bottom:18px;font-size:22px;text-align:left}
 input{width:100%;padding:14px 16px;margin:9px 0;border:2px solid #e4e8ee;border-radius:13px;font-size:15px;outline:0;background:#f7f9fc}
 input:focus{border-color:#007bff;background:#fff;box-shadow:0 0 0 4px rgba(0,123,255,.13)}
-button{width:100%;padding:15px;background:linear-gradient(90deg,#0052cc,#007bff);color:#fff;border:0;border-radius:13px;font-size:16px;font-weight:700;cursor:pointer;margin-top:16px;box-shadow:0 8px 20px rgba(0,82,204,.3)}
+.btn{width:100%;padding:15px;background:linear-gradient(90deg,#0052cc,#007bff);color:#fff;border:0;border-radius:13px;font-size:16px;font-weight:700;cursor:pointer;margin-top:16px;box-shadow:0 8px 20px rgba(0,82,204,.3)}
 .msg{text-align:center;margin-top:12px;font-size:13.5px;min-height:20px;font-weight:600}
 .err{color:#e53935}.ok{color:#43a047}
+.toggle{text-align:center;margin-top:14px;font-size:13.5px;color:#007bff;cursor:pointer;font-weight:600}
 .main{position:fixed;inset:0;display:flex;flex-direction:column;background:#e9eef5;z-index:10;overflow:hidden}
 .hd{background:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e0e0e0;min-height:66px}
 .hu{display:flex;align-items:center;gap:12px;flex:1}
@@ -57,7 +57,7 @@ button{width:100%;padding:15px;background:linear-gradient(90deg,#0052cc,#007bff)
 .list{display:flex;flex-direction:column;gap:10px}
 .item{background:#fff;padding:14px 18px;border-radius:14px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 10px rgba(0,0,0,.05);cursor:pointer}
 .av2{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#0052cc,#00c6ff);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0}
-.inf{flex:1;min-width:0}
+.inf{flex:1;min-width:0;text-align:left}
 .nm{font-weight:700;font-size:15px;color:#222}
 .sb{font-size:12.5px;color:#888;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .empty{text-align:center;color:#999;padding:34px 15px;font-size:14px}
@@ -126,18 +126,18 @@ button{width:100%;padding:15px;background:linear-gradient(90deg,#0052cc,#007bff)
 <div id="auth" class="auth"><div class="card">
   <div class="brand">BIN</div>
   <div class="sub">Ứng dụng chat & kết bạn</div>
-  <h2>🔐 Đăng Nhập</h2>
-  <input id="lu" placeholder="Tên đăng nhập (từ 3 ký tự)" autocomplete="off">
-  <input id="lp" type="password" placeholder="Mật khẩu (từ 3 ký tự)">
-  <button id="bl" type="button">ĐĂNG NHẬP</button>
+  <h2 id="authTitle" style="text-align:center">🔐 Đăng Nhập</h2>
+  <input id="lu" placeholder="Tên đăng nhập" autocomplete="off">
+  <input id="lp" type="password" placeholder="Mật khẩu">
+  <button id="bl" class="btn" type="button">ĐĂNG NHẬP</button>
+  <div class="toggle" id="toggleAuth">Chưa có tài khoản? Đăng ký ngay</div>
   <div id="lm" class="msg"></div>
-  <div class="sub" style="margin-top:14px;font-size:12.5px">💡 Nhập tên mới → bấm ĐĂNG NHẬP để tự đăng ký</div>
 </div></div>
 
 <div id="langP" class="langP hidden"><div class="pc">
   <h3>🌐 Dịch sang tiếng nào?</h3>
   <div class="pg" id="lg"></div>
-  <button id="bcl" type="button">XÁC NHẬN</button>
+  <button id="bcl" class="btn" type="button">XÁC NHẬN</button>
 </div></div>
 
 <div id="app" class="main hidden">
@@ -145,7 +145,7 @@ button{width:100%;padding:15px;background:linear-gradient(90deg,#0052cc,#007bff)
   <div class="ct">
     <div id="t-fri" class="tb hidden"><div class="pad">
       <div class="sec">🔍 Tìm và kết bạn</div>
-      <div class="row"><input id="fs" placeholder="Tên tài khoản..."><button id="bfs" type="button">Tìm</button></div>
+      <div class="row"><input id="fs" placeholder="Tên tài khoản..."><button id="bfs" class="btn" style="width:auto;margin:0;padding:10px 20px" type="button">Tìm</button></div>
       <div id="fr"></div>
       <div class="sec">📨 Lời mời</div><div id="pl" class="list"></div>
       <div class="sec">👥 Bạn bè</div><div id="fl" class="list"></div>
@@ -159,7 +159,7 @@ button{width:100%;padding:15px;background:linear-gradient(90deg,#0052cc,#007bff)
     <div id="t-set" class="tb hidden"><div class="set">
       <div class="sg"><div class="st">👤 Tài khoản</div><div class="si"><label>Tên</label><span class="v" id="su"></span></div></div>
       <div class="sg"><div class="st">🌐 Ngôn ngữ mặc định</div><div class="lg" id="slg"></div></div>
-      <div class="sg"><div class="st">ℹ️ Thông tin</div><div class="si"><label>Phiên bản</label><span class="v">BIN v10</span></div><div class="si" style="cursor:pointer" id="bca"><label>⚠️ Xóa tất cả</label><span class="v" style="color:#e53935">›</span></div></div>
+      <div class="sg"><div class="st">ℹ️ Thông tin</div><div class="si"><label>Phiên bản</label><span class="v">BIN v11</span></div><div class="si" style="cursor:pointer" id="bca"><label>⚠️ Đăng xuất</label><span class="v" style="color:#e53935">›</span></div></div>
     </div></div>
   </div>
   <div class="tool hidden" id="tool">
@@ -179,6 +179,7 @@ button{width:100%;padding:15px;background:linear-gradient(90deg,#0052cc,#007bff)
 (function(){
 'use strict';
 var S=io(),me=null,L='Tiếng Anh',F=null,myF=[],myR=[],mgs={},onl=[];
+var isLoginMode = true;
 var pc=null,ls=null,cc=null,ccu=null,ct=null,mu=false;
 var LANG=[{n:'Tiếng Việt',c:'vi'},{n:'Tiếng Anh',c:'en'},{n:'Tiếng Trung',c:'zh-CN'},{n:'Tiếng Nhật',c:'ja'},{n:'Tiếng Hàn',c:'ko'},{n:'Tiếng Pháp',c:'fr'},{n:'Tiếng Đức',c:'de'},{n:'Tiếng Tây Ban Nha',c:'es'},{n:'Tiếng Nga',c:'ru'},{n:'Tiếng Ả Rập',c:'ar'},{n:'Tiếng Bồ Đào Nha',c:'pt'},{n:'Tiếng Ý',c:'it'},{n:'Tiếng Thái',c:'th'},{n:'Tiếng Lào',c:'lo'},{n:'Tiếng Campuchia',c:'km'},{n:'Tiếng Ấn Độ',c:'hi'},{n:'Tiếng Indonesia',c:'id'},{n:'Tiếng Malaysia',c:'ms'},{n:'Tiếng Thổ Nhĩ Kỳ',c:'tr'},{n:'Tiếng Hà Lan',c:'nl'}];
 function $(i){return document.getElementById(i)}
@@ -188,17 +189,38 @@ function B(el,fn){if(!el)return;el.addEventListener('click',function(e){e.preven
 function nt(){var d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
 function ck(a,b){return[a,b].sort().join('::')}
 
+// Chuyển đổi Đăng nhập / Đăng ký
+B($('toggleAuth'),function(){
+  isLoginMode = !isLoginMode;
+  $('authTitle').textContent = isLoginMode ? '🔐 Đăng Nhập' : '📝 Đăng Ký';
+  $('bl').textContent = isLoginMode ? 'ĐĂNG NHẬP' : 'ĐĂNG KÝ';
+  $('toggleAuth').textContent = isLoginMode ? 'Chưa có tài khoản? Đăng ký ngay' : 'Đã có tài khoản? Đăng nhập';
+  $('lm').textContent = '';
+});
+
 B($('bl'),function(){
   var u=$('lu').value.trim(),p=$('lp').value.trim();
-  if(!u||!p){$('lm').textContent='⚠️ Nhập đủ!';$('lm').className='msg err';return}
+  if(!u||!p){$('lm').textContent='⚠️ Nhập đủ tên và mật khẩu!';$('lm').className='msg err';return}
   if(u.length<3||p.length<3){$('lm').textContent='⚠️ Từ 3 ký tự!';$('lm').className='msg err';return}
-  S.emit('login',{username:u,password:p},function(r){
-    if(!r||!r.ok){$('lm').textContent='❌ '+(r&&r.error||'Lỗi');$('lm').className='msg err';return}
-    me=r.user;myF=r.friends||[];myR=r.requests||[];mgs=r.messages||{};onl=r.onlineUsers||[];
-    $('lm').textContent='✅ OK!';$('lm').className='msg ok';
-    setTimeout(function(){$('auth').classList.add('hidden');$('langP').classList.remove('hidden');renderL()},400);
-  });
+  
+  if (!isLoginMode) {
+    // Đăng ký
+    S.emit('register',{username:u,password:p},function(r){
+      if(!r||!r.ok){$('lm').textContent='❌ '+(r&&r.error||'Lỗi');$('lm').className='msg err';return}
+      $('lm').textContent='✅ Đăng ký OK, hãy đăng nhập!';$('lm').className='msg ok';
+      $('toggleAuth').click(); // Chuyển về form đăng nhập
+    });
+  } else {
+    // Đăng nhập
+    S.emit('login',{username:u,password:p},function(r){
+      if(!r||!r.ok){$('lm').textContent='❌ '+(r&&r.error||'Lỗi');$('lm').className='msg err';return}
+      me=r.user;myF=r.friends||[];myR=r.requests||[];mgs=r.messages||{};onl=r.onlineUsers||[];
+      $('lm').textContent='✅ OK!';$('lm').className='msg ok';
+      setTimeout(function(){$('auth').classList.add('hidden');$('langP').classList.remove('hidden');renderL()},400);
+    });
+  }
 });
+
 function renderL(){var g=$('lg');if(!g)return;g.innerHTML='';LANG.forEach(function(l){var d=document.createElement('div');d.className='pi'+(l.n===L?' selected':'');d.textContent=l.n;B(d,function(){L=l.n;renderL()});g.appendChild(d)})}
 B($('bcl'),function(){$('langP').classList.add('hidden');$('app').classList.remove('hidden');fillTS();renderSL();setH();refresh();goTab('chat')});
 function fillTS(){var s=$('ts');if(!s)return;s.innerHTML='';LANG.forEach(function(l){var o=document.createElement('option');o.value=l.n;o.textContent=l.n;if(l.n===L)o.selected=true;s.appendChild(o)})}
@@ -291,7 +313,7 @@ B($('te'),function(){
   $('tool').appendChild(p);
 });
 B($('tq'),function(){if(!F)return;var i=$('mi');if(i){i.value='Xin chào 👋';i.focus()}});
-B($('tc'),function(){if(!F)return;var h='<div style="max-height:220px;overflow-y:auto;text-align:left">'+myF.map(function(n){return'<div style="padding:10px;background:#f4f7fb;border-radius:9px;margin:6px 0">👤 '+E(n)+'</div>'}).join('')+'</div>';alert('Bạn bè:\n'+myF.join('\n'))});
+B($('tc'),function(){if(!F)return;alert('Bạn bè:\n'+myF.join('\n'))});
 B($('tm'),function(){if(!F)return;if(confirm('Xóa chat này?')){var k=ck(me,F);mgs[k]=[];renderChat(F);T('Đã xóa')}});
 
 // WEBRTC
@@ -362,7 +384,7 @@ setInterval(function(){
   if(cc){var p=sg[cc.peer];if(p&&p.status==='ended'&&p.id===cc.id){hangup();if(ccu&&ccu.parentNode)ccu.parentNode.removeChild(ccu);ccu=null}}
 },1500);
 
-B($('bca'),function(){if(confirm('Xóa tất cả dữ liệu máy này?')){['bin_users','bin_friends','bin_requests','bin_messages','bin_sig'].forEach(function(k){try{localStorage.removeItem(k)}catch(e){}});location.reload()}});
+B($('bca'),function(){if(confirm('Đăng xuất?'))location.reload()});
 
 S.on('newMessage',function(d){
   var k=d.key;if(!mgs[k])mgs[k]=[];
@@ -382,17 +404,29 @@ S.on('onlineUsers',function(l){onl=l;refresh()});
 app.get('/', (req, res) => res.send(HTML));
 
 io.on('connection', (socket) => {
+  // ĐĂNG KÝ
+  socket.on('register', (data, cb) => {
+    const { username, password } = data || {};
+    if (!username || !password) return cb({ ok: false, error: 'Thiếu thông tin' });
+    let user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    if (user) return cb({ ok: false, error: 'Tên đã tồn tại' });
+    users.push({ username, password });
+    cb({ ok: true });
+  });
+
+  // ĐĂNG NHẬP
   socket.on('login', (data, cb) => {
     const { username, password } = data || {};
     if (!username || !password) return cb({ ok: false, error: 'Thiếu thông tin' });
     let user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
-    if (!user) { user = { username, password }; users.push(user); }
-    else if (user.password !== password) return cb({ ok: false, error: 'Sai mật khẩu' });
+    if (!user) return cb({ ok: false, error: 'Tài khoản không tồn tại' });
+    if (user.password !== password) return cb({ ok: false, error: 'Sai mật khẩu' });
     socket.username = user.username;
     onlineUsers.add(user.username);
     cb({ ok: true, user: user.username, friends: friends[user.username] || [], requests: requests[user.username] || [], messages: messages, onlineUsers: Array.from(onlineUsers) });
     io.emit('onlineUsers', Array.from(onlineUsers));
   });
+
   socket.on('searchUser', (data, cb) => {
     const { query } = data || {};
     if (!query) return cb({ ok: false });
@@ -400,6 +434,7 @@ io.on('connection', (socket) => {
     if (!f) return cb({ ok: false });
     cb({ ok: true, username: f.username });
   });
+
   socket.on('sendFriendRequest', (data, cb) => {
     const { to } = data || {}; const from = socket.username;
     if (!from || !to) return cb({ ok: false });
@@ -408,6 +443,7 @@ io.on('connection', (socket) => {
     io.emit('requestsUpdate', { user: to, requests: requests[to] });
     cb({ ok: true });
   });
+
   socket.on('acceptFriend', (data, cb) => {
     const { from } = data || {}; const me = socket.username;
     if (requests[me]) requests[me] = requests[me].filter(n => n !== from);
@@ -419,12 +455,14 @@ io.on('connection', (socket) => {
     io.emit('requestsUpdate', { user: me, requests: requests[me] || [] });
     cb({ ok: true });
   });
+
   socket.on('declineFriend', (data, cb) => {
     const { from } = data || {}; const me = socket.username;
     if (requests[me]) requests[me] = requests[me].filter(n => n !== from);
     io.emit('requestsUpdate', { user: me, requests: requests[me] || [] });
     cb({ ok: true });
   });
+
   socket.on('sendMessage', (data, cb) => {
     const { to, text, translatedTag, id } = data || {}; const from = socket.username;
     if (!from || !to || !text) return;
@@ -434,6 +472,7 @@ io.on('connection', (socket) => {
     messages[key].push(msg);
     io.emit('newMessage', { key, message: msg });
   });
+
   socket.on('disconnect', () => {
     if (socket.username) { onlineUsers.delete(socket.username); io.emit('onlineUsers', Array.from(onlineUsers)); }
   });
