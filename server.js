@@ -172,13 +172,34 @@ function tab(name){
 function doSearch(){
   var q = document.getElementById('searchName').value.trim();
   if(!q) return;
+  
   socket.emit('searchUser', {query:q}, function(res){
     var box = document.getElementById('searchResult');
+    box.innerHTML = "";
+    
     if(res.ok){
-      if(res.username === me) { box.innerHTML = "Là bạn!"; return; }
-      box.innerHTML = "<div style='background:#fff;padding:10px;border-radius:10px;margin-top:10px'>" + res.username + " <button style='width:auto;padding:5px 10px;margin:0' onclick='addFriend(\"" + res.username + "\")'>Kết bạn</button></div>";
+      if(res.username === me) { 
+        box.innerHTML = "<div style='margin-top:10px;color:red'>Đây là bạn!</div>"; 
+        return; 
+      }
+      
+      var div = document.createElement('div');
+      div.style.cssText = "background:#fff;padding:10px;border-radius:10px;margin-top:10px;display:flex;justify-content:space-between;align-items:center";
+      
+      var span = document.createElement('span');
+      span.innerText = res.username;
+      
+      var btn = document.createElement('button');
+      btn.innerText = "Kết bạn";
+      btn.style.cssText = "width:auto;padding:5px 10px;margin:0";
+      btn.onclick = function(){ addFriend(res.username); };
+      
+      div.appendChild(span);
+      div.appendChild(btn);
+      box.appendChild(div);
+      
     } else {
-      box.innerHTML = "Không tìm thấy!";
+      box.innerHTML = "<div style='margin-top:10px;color:red'>Không tìm thấy!</div>";
     }
   });
 }
@@ -186,6 +207,8 @@ function doSearch(){
 function addFriend(name){
   socket.emit('sendFriendRequest', {to:name}, function(res){
     alert("Đã gửi lời mời!");
+    document.getElementById('searchResult').innerHTML = "";
+    document.getElementById('searchName').value = "";
   });
 }
 
@@ -195,7 +218,17 @@ function renderRequests(list){
   list.forEach(function(name){
     var d = document.createElement('div');
     d.style.cssText = "background:#fff;padding:10px;border-radius:10px;margin-top:5px;display:flex;justify-content:space-between;align-items:center";
-    d.innerHTML = "<span>" + name + "</span> <button style='width:auto;padding:5px 15px;margin:0' onclick='acceptReq(\"" + name + "\")'>Đồng ý</button>";
+    
+    var span = document.createElement('span');
+    span.innerText = name;
+    
+    var btn = document.createElement('button');
+    btn.innerText = "Đồng ý";
+    btn.style.cssText = "width:auto;padding:5px 15px;margin:0";
+    btn.onclick = function(){ acceptReq(name); };
+    
+    d.appendChild(span);
+    d.appendChild(btn);
     box.appendChild(d);
   });
 }
@@ -224,7 +257,8 @@ function openChat(name){
   document.getElementById('bChat').classList.add('hide');
   document.getElementById('bSetting').classList.add('hide');
   document.getElementById('bChatRoom').classList.remove('hide');
-  document.getElementById('chatList').innerHTML = "<i>Đang tải...</i>";
+  document.getElementById('chatList').innerHTML = "<div style='text-align:center;margin-top:20px;color:#888'>Đang tải...</div>";
+  
   socket.emit('getMessages', {withUser:name}, function(msgs){
     var box = document.getElementById('chatList');
     box.innerHTML = "";
