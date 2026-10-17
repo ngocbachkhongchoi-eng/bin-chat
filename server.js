@@ -27,13 +27,13 @@ body{background:#e9eef5;overflow:hidden}
 .card{background:#fff;border-radius:24px;padding:40px 34px;max-width:420px;width:100%;box-shadow:0 30px 80px rgba(0,0,0,.35);margin:auto;text-align:center}
 .brand{font-size:36px;font-weight:800;letter-spacing:8px;background:linear-gradient(90deg,#0052cc,#00c6ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
 .sub{color:#888;font-size:13px;margin-bottom:26px}
-h2{color:#0052cc;margin-bottom:18px;font-size:22px;text-align:left}
+h2{color:#0052cc;margin-bottom:18px;font-size:22px}
 input{width:100%;padding:14px 16px;margin:9px 0;border:2px solid #e4e8ee;border-radius:13px;font-size:15px;outline:0;background:#f7f9fc}
 input:focus{border-color:#007bff;background:#fff;box-shadow:0 0 0 4px rgba(0,123,255,.13)}
-.btn{width:100%;padding:15px;background:linear-gradient(90deg,#0052cc,#007bff);color:#fff;border:0;border-radius:13px;font-size:16px;font-weight:700;cursor:pointer;margin-top:16px;box-shadow:0 8px 20px rgba(0,82,204,.3)}
+.btn{width:100%;padding:15px;background:linear-gradient(90deg,#0052cc,#007bff);color:#fff;border:0;border-radius:13px;font-size:16px;font-weight:700;cursor:pointer;margin-top:16px;box-shadow:0 8px 20px rgba(0,82,204,.3);transition:0.2s}
+.btn:hover{opacity:0.9;transform:translateY(-1px)}
 .msg{text-align:center;margin-top:12px;font-size:13.5px;min-height:20px;font-weight:600}
 .err{color:#e53935}.ok{color:#43a047}
-.toggle{text-align:center;margin-top:14px;font-size:13.5px;color:#007bff;cursor:pointer;font-weight:600}
 .main{position:fixed;inset:0;display:flex;flex-direction:column;background:#e9eef5;z-index:10;overflow:hidden}
 .hd{background:#fff;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e0e0e0;min-height:66px}
 .hu{display:flex;align-items:center;gap:12px;flex:1}
@@ -123,23 +123,38 @@ input:focus{border-color:#007bff;background:#fff;box-shadow:0 0 0 4px rgba(0,123
 @media(min-width:900px){.mw{max-width:45%}.ch{padding:30px 15% 24px}.tool{padding:12px 15% 16px}.pad,.set{padding:24px 15%}}
 </style></head><body>
 
-<div id="auth" class="auth"><div class="card">
+<!-- FORM ĐĂNG NHẬP -->
+<div id="authL" class="auth"><div class="card">
   <div class="brand">BIN</div>
   <div class="sub">Ứng dụng chat & kết bạn</div>
-  <h2 id="authTitle" style="text-align:center">🔐 Đăng Nhập</h2>
+  <h2>🔐 Đăng Nhập</h2>
   <input id="lu" placeholder="Tên đăng nhập" autocomplete="off">
   <input id="lp" type="password" placeholder="Mật khẩu">
   <button id="bl" class="btn" type="button">ĐĂNG NHẬP</button>
-  <div class="toggle" id="toggleAuth">Chưa có tài khoản? Đăng ký ngay</div>
+  <div class="msg" style="margin-top:14px;color:#007bff;cursor:pointer;text-decoration:underline" id="goReg">Chưa có tài khoản? Đăng ký ngay</div>
   <div id="lm" class="msg"></div>
 </div></div>
 
+<!-- FORM ĐĂNG KÝ -->
+<div id="authR" class="auth hidden"><div class="card">
+  <div class="brand">BIN</div>
+  <div class="sub">Tạo tài khoản mới</div>
+  <h2>📝 Đăng Ký</h2>
+  <input id="ru" placeholder="Tên đăng nhập (từ 3 ký tự)" autocomplete="off">
+  <input id="rp" type="password" placeholder="Mật khẩu (từ 3 ký tự)">
+  <button id="br" class="btn" type="button">ĐĂNG KÝ</button>
+  <div class="msg" style="margin-top:14px;color:#007bff;cursor:pointer;text-decoration:underline" id="goLogin">Đã có tài khoản? Đăng nhập</div>
+  <div id="rm" class="msg"></div>
+</div></div>
+
+<!-- POPUP NGÔN NGỮ -->
 <div id="langP" class="langP hidden"><div class="pc">
   <h3>🌐 Dịch sang tiếng nào?</h3>
   <div class="pg" id="lg"></div>
   <button id="bcl" class="btn" type="button">XÁC NHẬN</button>
 </div></div>
 
+<!-- GIAO DIỆN CHÍNH -->
 <div id="app" class="main hidden">
   <div class="hd"><div class="hu" id="hu"></div><div class="ha" id="ha"></div></div>
   <div class="ct">
@@ -159,7 +174,7 @@ input:focus{border-color:#007bff;background:#fff;box-shadow:0 0 0 4px rgba(0,123
     <div id="t-set" class="tb hidden"><div class="set">
       <div class="sg"><div class="st">👤 Tài khoản</div><div class="si"><label>Tên</label><span class="v" id="su"></span></div></div>
       <div class="sg"><div class="st">🌐 Ngôn ngữ mặc định</div><div class="lg" id="slg"></div></div>
-      <div class="sg"><div class="st">ℹ️ Thông tin</div><div class="si"><label>Phiên bản</label><span class="v">BIN v11</span></div><div class="si" style="cursor:pointer" id="bca"><label>⚠️ Đăng xuất</label><span class="v" style="color:#e53935">›</span></div></div>
+      <div class="sg"><div class="st">ℹ️ Thông tin</div><div class="si"><label>Phiên bản</label><span class="v">BIN v12</span></div><div class="si" style="cursor:pointer" id="bca"><label>⚠️ Đăng xuất</label><span class="v" style="color:#e53935">›</span></div></div>
     </div></div>
   </div>
   <div class="tool hidden" id="tool">
@@ -176,10 +191,9 @@ input:focus{border-color:#007bff;background:#fff;box-shadow:0 0 0 4px rgba(0,123
 <audio id="ra" autoplay class="audio"></audio>
 <script src="/socket.io/socket.io.js"></script>
 <script>
-(function(){
+document.addEventListener('DOMContentLoaded', function(){
 'use strict';
 var S=io(),me=null,L='Tiếng Anh',F=null,myF=[],myR=[],mgs={},onl=[];
-var isLoginMode = true;
 var pc=null,ls=null,cc=null,ccu=null,ct=null,mu=false;
 var LANG=[{n:'Tiếng Việt',c:'vi'},{n:'Tiếng Anh',c:'en'},{n:'Tiếng Trung',c:'zh-CN'},{n:'Tiếng Nhật',c:'ja'},{n:'Tiếng Hàn',c:'ko'},{n:'Tiếng Pháp',c:'fr'},{n:'Tiếng Đức',c:'de'},{n:'Tiếng Tây Ban Nha',c:'es'},{n:'Tiếng Nga',c:'ru'},{n:'Tiếng Ả Rập',c:'ar'},{n:'Tiếng Bồ Đào Nha',c:'pt'},{n:'Tiếng Ý',c:'it'},{n:'Tiếng Thái',c:'th'},{n:'Tiếng Lào',c:'lo'},{n:'Tiếng Campuchia',c:'km'},{n:'Tiếng Ấn Độ',c:'hi'},{n:'Tiếng Indonesia',c:'id'},{n:'Tiếng Malaysia',c:'ms'},{n:'Tiếng Thổ Nhĩ Kỳ',c:'tr'},{n:'Tiếng Hà Lan',c:'nl'}];
 function $(i){return document.getElementById(i)}
@@ -189,36 +203,32 @@ function B(el,fn){if(!el)return;el.addEventListener('click',function(e){e.preven
 function nt(){var d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
 function ck(a,b){return[a,b].sort().join('::')}
 
-// Chuyển đổi Đăng nhập / Đăng ký
-B($('toggleAuth'),function(){
-  isLoginMode = !isLoginMode;
-  $('authTitle').textContent = isLoginMode ? '🔐 Đăng Nhập' : '📝 Đăng Ký';
-  $('bl').textContent = isLoginMode ? 'ĐĂNG NHẬP' : 'ĐĂNG KÝ';
-  $('toggleAuth').textContent = isLoginMode ? 'Chưa có tài khoản? Đăng ký ngay' : 'Đã có tài khoản? Đăng nhập';
-  $('lm').textContent = '';
-});
+// CHUYỂN FORM
+B($('goReg'),function(){$('authL').classList.add('hidden');$('authR').classList.remove('hidden');});
+B($('goLogin'),function(){$('authR').classList.add('hidden');$('authL').classList.remove('hidden');});
 
+// ĐĂNG NHẬP
 B($('bl'),function(){
   var u=$('lu').value.trim(),p=$('lp').value.trim();
   if(!u||!p){$('lm').textContent='⚠️ Nhập đủ tên và mật khẩu!';$('lm').className='msg err';return}
-  if(u.length<3||p.length<3){$('lm').textContent='⚠️ Từ 3 ký tự!';$('lm').className='msg err';return}
-  
-  if (!isLoginMode) {
-    // Đăng ký
-    S.emit('register',{username:u,password:p},function(r){
-      if(!r||!r.ok){$('lm').textContent='❌ '+(r&&r.error||'Lỗi');$('lm').className='msg err';return}
-      $('lm').textContent='✅ Đăng ký OK, hãy đăng nhập!';$('lm').className='msg ok';
-      $('toggleAuth').click(); // Chuyển về form đăng nhập
-    });
-  } else {
-    // Đăng nhập
-    S.emit('login',{username:u,password:p},function(r){
-      if(!r||!r.ok){$('lm').textContent='❌ '+(r&&r.error||'Lỗi');$('lm').className='msg err';return}
-      me=r.user;myF=r.friends||[];myR=r.requests||[];mgs=r.messages||{};onl=r.onlineUsers||[];
-      $('lm').textContent='✅ OK!';$('lm').className='msg ok';
-      setTimeout(function(){$('auth').classList.add('hidden');$('langP').classList.remove('hidden');renderL()},400);
-    });
-  }
+  S.emit('login',{username:u,password:p},function(r){
+    if(!r||!r.ok){$('lm').textContent='❌ '+(r&&r.error||'Lỗi');$('lm').className='msg err';return}
+    me=r.user;myF=r.friends||[];myR=r.requests||[];mgs=r.messages||{};onl=r.onlineUsers||[];
+    $('lm').textContent='✅ OK!';$('lm').className='msg ok';
+    setTimeout(function(){$('authL').classList.add('hidden');$('langP').classList.remove('hidden');renderL()},300);
+  });
+});
+
+// ĐĂNG KÝ
+B($('br'),function(){
+  var u=$('ru').value.trim(),p=$('rp').value.trim();
+  if(!u||!p){$('rm').textContent='⚠️ Nhập đủ tên và mật khẩu!';$('rm').className='msg err';return}
+  if(u.length<3||p.length<3){$('rm').textContent='⚠️ Từ 3 ký tự!';$('rm').className='msg err';return}
+  S.emit('register',{username:u,password:p},function(r){
+    if(!r||!r.ok){$('rm').textContent='❌ '+(r&&r.error||'Lỗi');$('rm').className='msg err';return}
+    $('rm').textContent='✅ Đăng ký OK, hãy đăng nhập!';$('rm').className='msg ok';
+    setTimeout(function(){$('authR').classList.add('hidden');$('authL').classList.remove('hidden');$('lu').value=u;$('lp').value='';},800);
+  });
 });
 
 function renderL(){var g=$('lg');if(!g)return;g.innerHTML='';LANG.forEach(function(l){var d=document.createElement('div');d.className='pi'+(l.n===L?' selected':'');d.textContent=l.n;B(d,function(){L=l.n;renderL()});g.appendChild(d)})}
@@ -396,7 +406,7 @@ S.on('newMessage',function(d){
 S.on('friendsUpdate',function(d){if(d.user===me){myF=d.friends;refresh()}});
 S.on('requestsUpdate',function(d){if(d.user===me){myR=d.requests||[];refresh()}});
 S.on('onlineUsers',function(l){onl=l;refresh()});
-})();
+});
 </script>
 </body>
 </html>`;
@@ -404,7 +414,6 @@ S.on('onlineUsers',function(l){onl=l;refresh()});
 app.get('/', (req, res) => res.send(HTML));
 
 io.on('connection', (socket) => {
-  // ĐĂNG KÝ
   socket.on('register', (data, cb) => {
     const { username, password } = data || {};
     if (!username || !password) return cb({ ok: false, error: 'Thiếu thông tin' });
@@ -414,7 +423,6 @@ io.on('connection', (socket) => {
     cb({ ok: true });
   });
 
-  // ĐĂNG NHẬP
   socket.on('login', (data, cb) => {
     const { username, password } = data || {};
     if (!username || !password) return cb({ ok: false, error: 'Thiếu thông tin' });
