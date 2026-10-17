@@ -261,7 +261,6 @@ socket.on('requestUpdate', function(){
     renderRequests(res);
   });
 });
-
 </script>
 </body>
 </html>`;
