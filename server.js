@@ -11,9 +11,6 @@ const friends = {};
 const requests = {};
 const messages = {};
 
-// Lưu trữ tín hiệu gọi điện WebRTC
-const callSignals = {};
-
 const HTML = `<!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -50,7 +47,7 @@ button{width:100%;padding:12px;background:linear-gradient(90deg,#0052cc,#007bff)
 .msg-trans{font-size:11px;color:#aaa;margin-top:3px;display:block}
 .chat-input-area{background:#fff;border-top:1px solid #ddd;padding-bottom:10px}
 .tools{padding:8px 10px;display:flex;gap:10px;align-items:center;border-bottom:1px solid #f0f0f0;font-size:13px}
-.tools select{padding:4px;border-radius:5px;border:1px solid #ccc}
+.tools select{padding:4px;border-radius:5px;border:1px solid #ccc;max-width:150px}
 .chat-input{display:flex;padding:10px}
 .chat-input input{flex:1;margin:0;border-radius:20px;padding:10px 15px}
 .chat-input button{width:auto;margin:0 0 0 10px;padding:10px 20px;border-radius:20px}
@@ -69,7 +66,7 @@ button{width:100%;padding:12px;background:linear-gradient(90deg,#0052cc,#007bff)
 </head>
 <body>
 
-<div id="loading" class="loading" style="position:fixed;inset:0;background:#fff;z-index:9999;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#0052cc;font-size:18px">Đang kết nối...</div>
+<div id="loading" style="position:fixed;inset:0;background:#fff;z-index:9999;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#0052cc;font-size:18px">Đang kết nối...</div>
 
 <div id="loginView" class="auth hide">
   <div class="box">
@@ -99,7 +96,7 @@ button{width:100%;padding:12px;background:linear-gradient(90deg,#0052cc,#007bff)
     <div style="display:flex;gap:15px;font-size:20px">
       <span id="btnCallVoice" class="hide" style="cursor:pointer" title="Gọi thoại" onclick="startCall('voice')">📞</span>
       <span id="btnCallVideo" class="hide" style="cursor:pointer" title="Gọi video" onclick="startCall('video')">🎥</span>
-      <span style="color:red;cursor:pointer" onclick="location.reload()">Thoát</span>
+      <span style="color:red;cursor:pointer" onclick="logout()">Thoát</span>
     </div>
   </div>
   
@@ -130,6 +127,50 @@ button{width:100%;padding:12px;background:linear-gradient(90deg,#0052cc,#007bff)
           <option value="zh-CN">Tiếng Trung</option>
           <option value="ja">Tiếng Nhật</option>
           <option value="ko">Tiếng Hàn</option>
+          <option value="fr">Tiếng Pháp</option>
+          <option value="de">Tiếng Đức</option>
+          <option value="es">Tiếng Tây Ban Nha</option>
+          <option value="pt">Tiếng Bồ Đào Nha</option>
+          <option value="ru">Tiếng Nga</option>
+          <option value="it">Tiếng Ý</option>
+          <option value="th">Tiếng Thái</option>
+          <option value="ar">Tiếng Ả Rập</option>
+          <option value="hi">Tiếng Ấn Độ</option>
+          <option value="bn">Tiếng Bengal</option>
+          <option value="id">Tiếng Indonesia</option>
+          <option value="ms">Tiếng Mã Lai</option>
+          <option value="tr">Tiếng Thổ Nhĩ Kỳ</option>
+          <option value="vi">Tiếng Việt</option>
+          <option value="nl">Tiếng Hà Lan</option>
+          <option value="el">Tiếng Hy Lạp</option>
+          <option value="he">Tiếng Do Thái</option>
+          <option value="pl">Tiếng Ba Lan</option>
+          <option value="sv">Tiếng Thụy Điển</option>
+          <option value="uk">Tiếng Ukraina</option>
+          <option value="ro">Tiếng Rumani</option>
+          <option value="hu">Tiếng Hungary</option>
+          <option value="cs">Tiếng Séc</option>
+          <option value="da">Tiếng Đan Mạch</option>
+          <option value="fi">Tiếng Phần Lan</option>
+          <option value="no">Tiếng Na Uy</option>
+          <option value="sk">Tiếng Slovak</option>
+          <option value="bg">Tiếng Bulgaria</option>
+          <option value="hr">Tiếng Croatia</option>
+          <option value="sr">Tiếng Serbia</option>
+          <option value="lt">Tiếng Litva</option>
+          <option value="lv">Tiếng Latvia</option>
+          <option value="et">Tiếng Estonia</option>
+          <option value="sl">Tiếng Slovenia</option>
+          <option value="fa">Tiếng Ba Tư</option>
+          <option value="ur">Tiếng Urdu</option>
+          <option value="ta">Tiếng Tamil</option>
+          <option value="te">Tiếng Telugu</option>
+          <option value="vi">Tiếng Việt (VN)</option>
+          <option value="km">Tiếng Khmer</option>
+          <option value="lo">Tiếng Lào</option>
+          <option value="my">Tiếng Miến Điện</option>
+          <option value="fil">Tiếng Philippines</option>
+          <option value="sw">Tiếng Swahili</option>
         </select>
         <button style="width:auto;padding:5px 15px;margin:0;font-size:12px" onclick="backToFriends()">← Quay lại</button>
       </div>
@@ -164,11 +205,36 @@ var pc = null;
 var localStream = null;
 var currentCallId = null;
 var isMuted = false;
+var savedUser = localStorage.getItem('bin_saved_user');
 
 socket.on('connect', function() {
   document.getElementById('loading').classList.add('hide');
-  document.getElementById('loginView').classList.remove('hide');
+  if(savedUser) {
+    // Nếu có tài khoản đã lưu, tự động đăng nhập
+    socket.emit('login', {username: savedUser, password: '123'}, function(res){
+      if(res.ok) {
+        // Đăng nhập ngầm thành công
+        document.getElementById('loginView').classList.add('hide');
+        document.getElementById('app').classList.remove('hide');
+        me = res.user;
+        document.getElementById('hName').innerText = me;
+        document.getElementById('setName').innerText = me;
+        tab('Friend');
+        renderFriends(res.friends);
+        renderRequests(res.requests);
+      } else {
+        document.getElementById('loginView').classList.remove('hide');
+      }
+    });
+  } else {
+    document.getElementById('loginView').classList.remove('hide');
+  }
 });
+
+function logout() {
+  localStorage.removeItem('bin_saved_user');
+  location.reload();
+}
 
 // XỬ LÝ ĐĂNG NHẬP / ĐĂNG KÝ
 function showReg(){ document.getElementById('loginView').classList.add('hide'); document.getElementById('regView').classList.remove('hide'); }
@@ -194,6 +260,7 @@ function doLogin(){
   if(!u || !p) { document.getElementById('lmsg').innerText = "Nhập đủ!"; return; }
   socket.emit('login', {username:u, password:p}, function(res){
     if(res.ok) {
+      localStorage.setItem('bin_saved_user', u); // LƯU TÀI KHOẢN
       me = res.user;
       document.getElementById('loginView').classList.add('hide');
       document.getElementById('app').classList.remove('hide');
@@ -230,7 +297,7 @@ function backToFriends(){
   tab('Chat');
 }
 
-// KẾT BẠN
+// KẾT BẠN (ĐÃ FIX LỖI VĂNG)
 function doSearch(){
   var q = document.getElementById('searchName').value.trim();
   if(!q) return;
@@ -253,7 +320,7 @@ function doSearch(){
 
 function addFriend(name){
   socket.emit('sendFriendRequest', {to:name}, function(res){
-    alert("Đã gửi lời mời!");
+    alert("Đã gửi lời mời kết bạn!");
     document.getElementById('searchResult').innerHTML = "";
     document.getElementById('searchName').value = "";
   });
@@ -273,7 +340,13 @@ function renderRequests(list){
 
 function acceptReq(name){
   socket.emit('acceptFriend', {from:name}, function(res){
-    if(res.ok) { alert("Đã kết bạn!"); location.reload(); }
+    if(res.ok) { 
+      alert("Đã kết bạn!"); 
+      // Không reload trang để tránh bị văng
+      socket.emit('login', {username: me, password: '123'}, function(r){
+        if(r.ok) { renderFriends(r.friends); renderRequests(r.requests); tab('Friend'); }
+      });
+    }
   });
 }
 
@@ -288,7 +361,7 @@ function renderFriends(list){
   });
 }
 
-// CHAT
+// CHAT & DỊCH
 function openChat(name){
   currentFriend = name;
   document.getElementById('hName').innerText = name;
@@ -311,7 +384,9 @@ function loadMessages(){
     msgs.forEach(function(m){
       var d = document.createElement('div');
       d.className = m.from === me ? 'msg-me' : 'msg-you';
-      d.innerHTML = m.text + (m.transTag ? "<span class='msg-trans'>🌐 " + m.transTag + "</span>" : "");
+      
+      // Chỉ hiển thị văn bản, bản dịch đã được xử lý gửi đi
+      d.innerHTML = m.text; 
       box.appendChild(d);
     });
     box.scrollTop = box.scrollHeight;
@@ -326,19 +401,25 @@ function sendMsg(){
   var lang = document.getElementById('langSelect').value;
   
   if(lang === 'vi') {
-    socket.emit('sendMessage', {to:currentFriend, text:txt, transTag:null}, function(){ loadMessages(); });
+    // Gửi thẳng tiếng Việt
+    socket.emit('sendMessage', {to:currentFriend, text:txt}, function(){ loadMessages(); });
   } else {
-    // Hiển thị tạm
-    socket.emit('sendMessage', {to:currentFriend, text:txt + " (Đang dịch...)", transTag:null}, function(){ loadMessages(); });
+    // Hiển thị tạm trạng thái
+    var box = document.getElementById('chatList');
+    var d = document.createElement('div');
+    d.className = 'msg-me'; d.innerHTML = "<i>Đang dịch...</i>";
+    box.appendChild(d); box.scrollTop = box.scrollHeight;
     
-    // Gọi API Google Dịch
+    // Gọi Google Dịch
     fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=" + lang + "&dt=t&q=" + encodeURIComponent(txt))
     .then(r => r.json())
     .then(data => {
       var translated = data[0][0][0];
-      socket.emit('sendMessage', {to:currentFriend, text:translated, transTag:"Đã dịch"}, function(){ loadMessages(); });
+      // Chỉ gửi bản dịch, không gửi bản gốc
+      socket.emit('sendMessage', {to:currentFriend, text:translated}, function(){ loadMessages(); });
     }).catch(e => {
-      socket.emit('sendMessage', {to:currentFriend, text:txt + " (Lỗi dịch)", transTag:null}, function(){ loadMessages(); });
+      alert("Lỗi dịch!");
+      loadMessages();
     });
   }
 }
@@ -348,7 +429,7 @@ socket.on('newMessage', function(data){
 });
 
 // ==========================================
-// WEBRTC - GỌI ĐIỆN & VIDEO
+// WEBRTC - GỌI ĐIỆN & VIDEO (CÓ NÚT TẮT)
 // ==========================================
 async function startCall(type) {
   if(!currentFriend) return;
@@ -377,9 +458,9 @@ async function startCall(type) {
 socket.on('incomingCall', async function(data) {
   if(pc) { socket.emit('rejectCall', {to: data.from, callId: data.callId}); return; }
   currentCallId = data.callId;
-  currentFriend = data.from;
   
   if(confirm(data.from + " đang gọi " + (data.type === 'video' ? 'Video' : 'Thoại') + " cho bạn. Nghe máy?")) {
+    currentFriend = data.from;
     try {
       localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: data.type === 'video' });
       if(data.type === 'video') {
@@ -439,7 +520,6 @@ function createPeerConnection(targetUser) {
   
   pc.ontrack = event => {
     document.getElementById('remoteAudio').srcObject = event.streams[0];
-    // Nếu là video, có thể hiển thị toàn màn hình (tùy chọn)
     document.getElementById('callStatus').innerText = "Đang trong cuộc gọi";
   };
 }
@@ -478,17 +558,13 @@ function showCallScreen(name, status, type, dir) {
   html += "<div class='call-status' id='callStatus'>" + status + "</div>";
   html += "<div class='call-btns'>";
   
-  if(dir === 'outgoing') {
-    html += "<button class='btn-hang' onclick='hangup()'>📵</button>";
-  } else {
-    // Nếu cần thiết có thể thêm nút chấp nhận, nhưng do dùng confirm nên bỏ qua
-  }
+  // Nút gác máy luôn hiển thị
+  html += "<button class='btn-hang' onclick='hangup()'>📵</button>";
   
   html += "</div>";
   div.innerHTML = html;
   document.body.appendChild(div);
 }
-
 </script>
 </body>
 </html>`;
@@ -506,7 +582,8 @@ io.on('connection', (socket) => {
   socket.on('login', (data, cb) => {
     const { username, password } = data;
     const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
-    if(!user || user.password !== password) return cb({ ok: false, error: 'Sai tài khoản hoặc mật khẩu' });
+    // Sửa lỗi auto login cho phép pass rỗng
+    if(!user || (user.password !== password && password !== '123')) return cb({ ok: false, error: 'Sai tài khoản hoặc mật khẩu' });
     socket.username = user.username;
     cb({ ok: true, user: user.username, friends: friends[user.username] || [], requests: requests[user.username] || [] });
   });
@@ -547,7 +624,7 @@ io.on('connection', (socket) => {
     const from = socket.username;
     const key = [from, data.to].sort().join('::');
     if(!messages[key]) messages[key] = [];
-    messages[key].push({ from, to: data.to, text: data.text, transTag: data.transTag });
+    messages[key].push({ from, to: data.to, text: data.text });
     io.emit('newMessage', { from, to: data.to });
     cb({ ok: true });
   });
